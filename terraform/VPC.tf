@@ -208,6 +208,7 @@ yum remove -y java-1.7.0-openjdk
 yum install -y java-1.8.0-openjdk-devel.x86_64
 rm /etc/localtime
 ln -s /usr/share/zoneinfo/Asia/Seoul /etc/localtime
+yum install -y mysql
 EOF
 
   tags = {
