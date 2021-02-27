@@ -3,3 +3,6 @@
 /.idea/
 /build/
 /src/main/resources/application-oauth.properties
+/terraform/.terraform/
+/terraform/.terraform*
+/terraform/terraform.tfstate*
