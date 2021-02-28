@@ -184,11 +184,96 @@ variable default_keypair_name {
   default = "IB07441_sshkey"
 }
 
+resource "aws_iam_role" "WebAppRole" {
+  name = "IB07441_WebAppRole"
+  path = "/"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+            {
+              "Sid": "",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "role_policy_attach_AWSCodeDeployReadOnlyAccess" {
+  role       = aws_iam_role.WebAppRole.name
+  policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployReadOnlyAccess"
+}
+resource "aws_iam_role_policy_attachment" "role_policy_attach_AmazonEC2ReadOnlyAccess" {
+  role       = aws_iam_role.WebAppRole.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
+}
+
+
+resource "aws_iam_policy" "WebAppRolePolicies" {
+  name        = "IB07441_WebAppRolePolicies"
+  path        = "/"
+  description = "IB07441_WebAppRolePolicies"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "autoscaling:Describe*",
+                "autoscaling:EnterStandby",
+                "autoscaling:ExitStandby",
+                "autoscaling:UpdateAutoScalingGroup"
+              ],
+              "Resource" : "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ec2:DescribeInstances",
+                "ec2:DescribeInstanceStatus"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:Get*",
+                "s3:List*"
+              ],
+              "Resource": [
+                "arn:aws:s3:::fs07441-cicd-workshop",
+                "arn:aws:s3:::fs07441-cicd-workshop/*",
+                "arn:aws:s3:::FS07441-CodePipeline*"
+              ]
+            }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "IB07441_role_policy_attach_WebApp" {
+  role       = aws_iam_role.WebAppRole.name
+  policy_arn = aws_iam_policy.WebAppRolePolicies.arn
+}
+
+resource "aws_iam_instance_profile" "InstanceProfile" {
+  name = "IB07441_InstanceProfile"
+  role = aws_iam_role.WebAppRole.name
+}
+
 resource "aws_instance" "SpringBoot_EC2_01" {
   ami = "ami-9bec36f5" #ap-northeast-2
   availability_zone = aws_subnet.publicSubnet01.availability_zone
   instance_type = "t2.nano"
-  #iam_instance_profile = aws_iam_instance_profile.InstanceProfile.id
+  iam_instance_profile = aws_iam_instance_profile.InstanceProfile.id
   key_name = var.default_keypair_name
   vpc_security_group_ids = [
     aws_default_security_group.DefaultSecurityGroup.id,
